@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – Tasks</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222; --border: #2e2e2e;
+      --text: #f0ede8; --muted: #666; --accent: #c8f060; --accent-dark: #a8d040;
+      --danger: #ff4d4d; --danger-bg: rgba(255,77,77,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(15,15,15,0.92); backdrop-filter: blur(12px); z-index: 10; }
+    .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.3rem; letter-spacing: -0.02em; color: var(--text); text-decoration: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; margin-left: 32px; transition: color 0.2s; cursor: pointer; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent); }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 60px 40px; }
+
+    /* LOGIN */
+    #loginWrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 61px); }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 48px 40px; width: 380px; }
+    .login-card h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; font-weight: 400; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 32px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    input[type="text"], input[type="password"], textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 300; width: 100%; transition: border-color 0.2s; outline: none; resize: none; }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    .btn-primary { background: var(--accent); color: #0f0f0f; border: none; border-radius: 10px; padding: 13px 22px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:active { transform: scale(0.98); }
+    .login-error { color: var(--danger); font-size: 0.82rem; margin-top: 10px; min-height: 16px; }
+
+    /* ADMIN PANEL */
+    #adminWrap { display: none; }
+    .page-header { margin-bottom: 40px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .page-header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; letter-spacing: -0.03em; }
+    .page-header h1 em { font-style: italic; color: var(--accent); }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 8px 16px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; }
+    .btn-outline:hover { color: var(--text); border-color: #555; }
+    .btn-export { border-color: var(--accent); color: var(--accent); }
+    .btn-export:hover { background: rgba(200,240,96,0.08); }
+
+    /* Flash */
+    #flash { display: none; background: var(--accent); color: #0f0f0f; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; margin-bottom: 24px; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Add form */
+    .add-form { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 32px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+    .add-form .field { margin-bottom: 0; }
+    .add-form .btn-primary { width: auto; margin-top: 0; padding: 12px 20px; white-space: nowrap; }
+
+    /* Table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--surface2); padding: 12px 16px; text-align: left; font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    td { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; }
+    .badge-done { background: rgba(200,240,96,0.12); color: var(--accent); }
+    .badge-todo { background: rgba(255,255,255,0.06); color: var(--muted); }
+    .row-actions { display: flex; gap: 6px; }
+    .btn-sm { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 7px; padding: 5px 12px; font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap; }
+    .btn-sm:hover { color: var(--text); border-color: #555; }
+    .btn-sm.del:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
+    .btn-sm.edit:hover { color: var(--accent); border-color: var(--accent); }
+    .empty-row td { text-align: center; color: var(--muted); padding: 48px; font-size: 0.88rem; }
+
+    /* Modal */
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+    #modal.open { display: flex; }
+    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 36px; width: 440px; max-width: 90vw; }
+    .modal-box h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions .btn-primary { width: auto; margin: 0; }
+    .btn-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; }
+    .btn-cancel:hover { color: var(--text); }
+    .check-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .check-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+    .check-row label { font-size: 0.88rem; color: var(--muted); cursor: pointer; }
+
+    @media (max-width: 700px) {
+      nav { padding: 16px 20px; } main { padding: 30px 16px; }
+      .add-form { grid-template-columns: 1fr; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Tasks.</a>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html">All tasks</a>
+    <a class="active">Admin</a>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <div class="login-card">
+    <h1>Admin <em>access</em></h1>
+    <p>Enter your credentials to continue.</p>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="admin" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" onclick="login()">Sign in</button>
+    <p class="login-error" id="loginError"></p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminWrap">
+  <main>
+    <div class="page-header">
+      <h1>Admin <em>panel</em></h1>
+      <div class="header-actions">
+        <button class="btn-outline btn-export" onclick="exportCSV()">↓ Export CSV</button>
+        <button class="btn-outline" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <div id="flash"></div>
+
+    <div class="add-form">
+      <div class="field">
+        <label>Task name</label>
+        <input type="text" id="newName" placeholder="Enter task name..." />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="newDesc" placeholder="Optional note..." />
+      </div>
+      <button class="btn-primary" onclick="adminCreate()">Add task</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="empty-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="modal">
+  <div class="modal-box">
+    <h2>Edit <em>task</em></h2>
+    <input type="hidden" id="editId" />
+    <div class="field">
+      <label>Task name</label>
+      <input type="text" id="editName" />
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="editDesc" rows="3"></textarea>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="editDone" />
+      <label for="editDone">Mark as completed</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveEdit()">Save changes</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_USER = 'admin';
+  const ADMIN_PASS = 'admin123';
+  let loggedIn = false;
+
+  function login() {
+    if (loggedIn) return;
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      loggedIn = true;
+      document.getElementById('loginError').textContent = '';
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('adminWrap').style.display = 'block';
+      loadTable();
+    } else {
+      document.getElementById('loginError').textContent = 'Invalid username or password.';
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  }
+
+  function logout() {
+    loggedIn = false;
+    document.getElementById('loginWrap').style.display = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('loginError').textContent = '';
+  }
+
+  async function loadTable() {
+    const res = await fetch('/api/items');
+    const items = await res.json();
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No tasks yet.</td></tr>';
+      return;
+    }
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + item.name + '</td>' +
+        '<td style="color:var(--muted)">' + (item.description || '—') + '</td>' +
+        '<td style="color:var(--muted)">' + formatDate(item.createdAt) + '</td>' +
+        '<td><span class="badge ' + (item.done ? 'badge-done' : 'badge-todo') + '">' + (item.done ? 'Done' : 'To do') + '</span></td>' +
+        '<td><div class="row-actions">' +
+        '<button class="btn-sm edit" onclick="openEdit(' + item.id + ', \'' + esc(item.name) + '\', \'' + esc(item.description || '') + '\', ' + item.done + ')">Edit</button>' +
+        '<button class="btn-sm del" onclick="deleteItem(' + item.id + ')">Delete</button>' +
+        '</div></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function adminCreate() {
+    const name = document.getElementById('newName').value.trim();
+    const description = document.getElementById('newDesc').value.trim();
+    if (!name) return;
+    await fetch('/api/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description }) });
+    document.getElementById('newName').value = '';
+    document.getElementById('newDesc').value = '';
+    flash('Task added');
+    loadTable();
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Delete this task?')) return;
+    await fetch('/api/items/' + id, { method: 'DELETE' });
+    flash('Task deleted');
+    loadTable();
+  }
+
+  function openEdit(id, name, desc, done) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editDesc').value = desc;
+    document.getElementById('editDone').checked = done;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  async function saveEdit() {
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('editName').value.trim();
+    const description = document.getElementById('editDesc').value.trim();
+    const done = document.getElementById('editDone').checked;
+    if (!name) return;
+    await fetch('/api/items/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description, done }) });
+    closeModal();
+    flash('Task updated');
+    loadTable();
+  }
+
+  function exportCSV() {
+    fetch('/api/items').then(r => r.json()).then(items => {
+      const rows = [['ID','Name','Description','Done','Created']];
+      items.forEach(i => rows.push([i.id, i.name, i.description || '', i.done, i.createdAt]));
+      const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'tasks.csv';
+      a.click();
+    });
+  }
+
+  function flash(msg) {
+    const el = document.getElementById('flash');
+    el.textContent = msg;
+    el.style.display = 'block';
+    clearTimeout(flash._t);
+    flash._t = setTimeout(() => el.style.display = 'none', 2500);
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function esc(s) { return s.replace(/'/g, "\\'"); }
+
+  // Close modal on backdrop click
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Enter on login fields
+  document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>
